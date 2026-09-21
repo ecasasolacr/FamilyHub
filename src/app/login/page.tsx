@@ -4,30 +4,9 @@ import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setMessage(`Error: ${error.message}`);
-    } else {
-      setMessage("¡Revisa tu correo! Te hemos enviado un Magic Link para entrar.");
-    }
-    setLoading(false);
-  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -56,47 +35,13 @@ export default function LoginPage() {
           <p className="text-slate-500 font-medium">Ingresa para gestionar tu hogar</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">
-              Correo Electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              placeholder="tu@correo.com"
-            />
+        {message && (
+          <div className={`p-4 mb-4 rounded-xl text-sm font-medium text-center ${message.startsWith("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+            {message}
           </div>
+        )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Enviando..." : "Enviar Magic Link"}
-          </button>
-
-          {message && (
-            <div className={`p-4 rounded-xl text-sm font-medium text-center ${message.startsWith("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
-              {message}
-            </div>
-          )}
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">O</span>
-            </div>
-          </div>
-          
+        <div>
           <button
             onClick={handleGoogleLogin}
             disabled={loading}

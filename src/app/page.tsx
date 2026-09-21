@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { Star, CheckCircle, Clock } from "lucide-react";
+import { Star, CheckCircle, Clock, LogOut } from "lucide-react";
+import { signOutAction } from "@/app/actions";
+
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -47,17 +49,28 @@ export default async function DashboardPage() {
           </h1>
           <p className="text-slate-500 font-medium">Aquí está el resumen de hoy.</p>
         </div>
-        
-        {/* US2.2: Points Display */}
-        {profile.role === "member" && (
-          <div className="flex flex-col items-center justify-center bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-1 font-bold text-xl">
-              <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-              {profile.total_points}
+        <div className="flex items-start gap-3">
+          {/* US2.2: Points Display */}
+          {profile.role === "member" && (
+            <div className="flex flex-col items-center justify-center bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-2xl shadow-sm">
+              <div className="flex items-center gap-1 font-bold text-xl">
+                <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+                {profile.total_points}
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600/80">Puntos</span>
             </div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600/80">Puntos</span>
-          </div>
-        )}
+          )}
+
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="p-2.5 bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 rounded-full transition-all shadow-sm"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
