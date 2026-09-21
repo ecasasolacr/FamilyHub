@@ -34,6 +34,35 @@ export default async function CalendarPage() {
     try {
       const { fetchGoogleCalendarEvents } = await import("@/lib/google-calendar");
       const items = await fetchGoogleCalendarEvents(providerToken);
+      
+      const dbGoogleEvents = items.filter((item: any) => item.summary && item.summary.includes('[FamilyHub]'));
+      
+      const syncPromises = dbGoogleEvents.map(async (gEvent: any) => {
+         const dbEvent = events?.find(e => e.google_event_id === gEvent.id);
+         if (dbEvent) {
+            const gUpdated = new Date(gEvent.updated).getTime();
+            const dbUpdated = new Date(dbEvent.updated_at || dbEvent.created_at || 0).getTime();
+            
+            if (gUpdated > dbUpdated + 5000) { // 5s buffer
+               let newTitle = gEvent.summary.replace('[FamilyHub]', '').trim();
+               await supabase.from('events').update({
+                  title: newTitle,
+                  description: gEvent.description || '',
+                  start_time: gEvent.start?.dateTime || gEvent.start?.date,
+                  end_time: gEvent.end?.dateTime || gEvent.end?.date,
+                  updated_at: new Date(gEvent.updated).toISOString()
+               }).eq('id', dbEvent.id);
+
+               dbEvent.title = newTitle;
+               dbEvent.description = gEvent.description || '';
+               dbEvent.start_time = gEvent.start?.dateTime || gEvent.start?.date;
+               dbEvent.end_time = gEvent.end?.dateTime || gEvent.end?.date;
+               dbEvent.updated_at = new Date(gEvent.updated).toISOString();
+            }
+         }
+      });
+      await Promise.all(syncPromises);
+
       googleEvents = items
         .filter((item: any) => !(item.summary && item.summary.includes('[FamilyHub]')))
         .map((item: any) => ({

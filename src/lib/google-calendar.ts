@@ -64,3 +64,37 @@ export async function createGoogleCalendarEvent(
     return null;
   }
 }
+
+export async function updateGoogleCalendarEvent(
+  providerToken: string,
+  eventId: string,
+  eventDetails: { title: string; description?: string; startTime: string; endTime: string }
+) {
+  const auth = getGoogleAuthClient(providerToken);
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  const titleWithKeyword = eventDetails.title.includes('[FamilyHub]') 
+    ? eventDetails.title 
+    : `[FamilyHub] ${eventDetails.title}`;
+
+  try {
+    const res = await calendar.events.update({
+      calendarId: 'primary',
+      eventId: eventId,
+      requestBody: {
+        summary: titleWithKeyword,
+        description: eventDetails.description,
+        start: {
+          dateTime: eventDetails.startTime,
+        },
+        end: {
+          dateTime: eventDetails.endTime,
+        },
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error updating Google Calendar event:', error);
+    return null;
+  }
+}

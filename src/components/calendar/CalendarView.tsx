@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Clock, Edit } from "lucide-react";
 
 export function CalendarView({ events, profiles, isAdmin }: { events: any[], profiles: any[], isAdmin: boolean }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"month" | "day">("month");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
   // Month View calculations
   const monthStart = startOfMonth(currentDate);
@@ -107,7 +108,18 @@ export function CalendarView({ events, profiles, isAdmin }: { events: any[], pro
                 <div key={event.id} className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 relative overflow-hidden group">
                   <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: getProfileColor(event.assigned_to) }} />
                   <div className="flex-1 ml-2">
-                    <h4 className="font-bold text-slate-800">{event.title}</h4>
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-slate-800">{event.title}</h4>
+                      {isAdmin && event.id && event.assigned_to !== 'google' && (
+                        <button 
+                          onClick={() => { setSelectedEvent(event); setModalMode("edit"); }}
+                          className="text-slate-400 hover:text-primary transition-colors"
+                          title="Editar evento"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     {event.description && <p className="text-sm text-slate-500 mt-1">{event.description}</p>}
                     <div className="flex items-center gap-4 mt-3 text-xs font-semibold text-slate-500">
                       <span className="flex items-center gap-1">
@@ -126,7 +138,7 @@ export function CalendarView({ events, profiles, isAdmin }: { events: any[], pro
       {/* FAB for Admin to Create Event */}
       {isAdmin && (
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setSelectedEvent(null); setModalMode("create"); }}
           className="absolute bottom-20 right-6 md:static md:w-full md:mt-6 bg-primary text-white p-4 md:py-3 md:rounded-xl rounded-full shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
         >
           <Plus className="w-6 h-6 md:w-5 md:h-5" />
@@ -134,35 +146,44 @@ export function CalendarView({ events, profiles, isAdmin }: { events: any[], pro
         </button>
       )}
 
-      {/* Basic Create Modal */}
-      {isModalOpen && (
+      {/* Modal */}
+      {modalMode && (
         <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl border border-slate-100">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">Crear Nuevo Evento</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-4">
+              {modalMode === "create" ? "Crear Nuevo Evento" : "Editar Evento"}
+            </h3>
             <form action={async (formData) => {
-              const { createEvent } = await import('@/app/calendar/actions');
-              await createEvent(formData);
-              setIsModalOpen(false);
+              if (modalMode === "create") {
+                const { createEvent } = await import('@/app/calendar/actions');
+                await createEvent(formData);
+              } else if (modalMode === "edit") {
+                const { updateEvent } = await import('@/app/calendar/actions');
+                await updateEvent(formData);
+              }
+              setModalMode(null);
             }} className="space-y-4">
+              
+              {modalMode === "edit" && <input type="hidden" name="id" value={selectedEvent.id} />}
               
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Título</label>
-                <input name="title" required type="text" className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
+                <input name="title" required type="text" defaultValue={selectedEvent?.title} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
               
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
-                <textarea name="description" rows={2} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
+                <textarea name="description" rows={2} defaultValue={selectedEvent?.description} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
-                  <input name="date" required type="date" defaultValue={format(selectedDate, 'yyyy-MM-dd')} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <input name="date" required type="date" defaultValue={selectedEvent ? format(parseISO(selectedEvent.start_time), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Asignado a</label>
-                  <select name="assigned_to" className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary">
+                  <select name="assigned_to" defaultValue={selectedEvent?.assigned_to || "family"} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="family">Toda la familia</option>
                     {profiles.map(p => <option key={p.id} value={p.id}>{p.first_name}</option>)}
                   </select>
@@ -172,16 +193,16 @@ export function CalendarView({ events, profiles, isAdmin }: { events: any[], pro
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hora Inicio</label>
-                  <input name="start_time" required type="time" defaultValue="10:00" className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <input name="start_time" required type="time" defaultValue={selectedEvent ? format(parseISO(selectedEvent.start_time), 'HH:mm') : "10:00"} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hora Fin</label>
-                  <input name="end_time" required type="time" defaultValue="11:00" className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <input name="end_time" required type="time" defaultValue={selectedEvent ? format(parseISO(selectedEvent.end_time), 'HH:mm') : "11:00"} className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
+                <button type="button" onClick={() => setModalMode(null)} className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                   Cancelar
                 </button>
                 <button type="submit" className="flex-1 px-4 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors">
