@@ -32,16 +32,18 @@ export default async function CalendarPage() {
   let googleEvents: any[] = [];
   if (providerToken) {
     try {
-      const { fetchFamilyHubEvents } = await import("@/lib/google-calendar");
-      const items = await fetchFamilyHubEvents(providerToken);
-      googleEvents = items.map((item: any) => ({
-        id: item.id,
-        title: item.summary,
-        description: item.description || "",
-        start_time: item.start?.dateTime || item.start?.date,
-        end_time: item.end?.dateTime || item.end?.date,
-        assigned_to: "google",
-      }));
+      const { fetchGoogleCalendarEvents } = await import("@/lib/google-calendar");
+      const items = await fetchGoogleCalendarEvents(providerToken);
+      googleEvents = items
+        .filter((item: any) => !(item.summary && item.summary.includes('[FamilyHub]')))
+        .map((item: any) => ({
+          id: item.id,
+          title: item.summary,
+          description: item.description || "",
+          start_time: item.start?.dateTime || item.start?.date,
+          end_time: item.end?.dateTime || item.end?.date,
+          assigned_to: "google",
+        }));
     } catch (e) {
       console.error(e);
     }

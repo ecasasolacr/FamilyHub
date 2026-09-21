@@ -6,7 +6,7 @@ export function getGoogleAuthClient(providerToken: string) {
   return oauth2Client;
 }
 
-export async function fetchFamilyHubEvents(providerToken: string) {
+export async function fetchGoogleCalendarEvents(providerToken: string) {
   const auth = getGoogleAuthClient(providerToken);
   const calendar = google.calendar({ version: 'v3', auth });
 
@@ -23,7 +23,6 @@ export async function fetchFamilyHubEvents(providerToken: string) {
       maxResults: 200,
       singleEvents: true,
       orderBy: 'startTime',
-      q: '[FamilyHub]', // Search term
     });
 
     return res.data.items || [];
