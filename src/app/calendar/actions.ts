@@ -22,9 +22,9 @@ export async function createEvent(formData: FormData) {
     return { error: 'Missing required fields' }
   }
 
-  // Parse local time back to UTC based ISO
-  const startDateTime = new Date(`${date}T${startTime}:00`).toISOString()
-  const endDateTime = new Date(`${date}T${endTime}:00`).toISOString()
+  // Parse local time to Costa Rica timezone
+  const startDateTime = `${date}T${startTime}:00-06:00`
+  const endDateTime = `${date}T${endTime}:00-06:00`
 
   const { data: dbEvent, error } = await supabase
     .from('events')
@@ -89,8 +89,8 @@ export async function updateEvent(formData: FormData) {
     return { error: 'Missing required fields' }
   }
 
-  const startDateTime = new Date(`${date}T${startTime}:00`).toISOString()
-  const endDateTime = new Date(`${date}T${endTime}:00`).toISOString()
+  const startDateTime = `${date}T${startTime}:00-06:00`
+  const endDateTime = `${date}T${endTime}:00-06:00`
 
   const { data: currentEvent } = await supabase.from('events').select('google_event_id').eq('id', id).single()
 

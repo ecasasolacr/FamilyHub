@@ -51,9 +51,11 @@ export async function createGoogleCalendarEvent(
         description: eventDetails.description,
         start: {
           dateTime: eventDetails.startTime,
+          timeZone: 'America/Costa_Rica',
         },
         end: {
           dateTime: eventDetails.endTime,
+          timeZone: 'America/Costa_Rica',
         },
       },
     });
@@ -86,9 +88,11 @@ export async function updateGoogleCalendarEvent(
         description: eventDetails.description,
         start: {
           dateTime: eventDetails.startTime,
+          timeZone: 'America/Costa_Rica',
         },
         end: {
           dateTime: eventDetails.endTime,
+          timeZone: 'America/Costa_Rica',
         },
       },
     });
